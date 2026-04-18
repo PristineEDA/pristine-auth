@@ -1,5 +1,22 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Cloudflare deployment
+
+This app uses `@opennextjs/cloudflare` 1.x and should be deployed to Cloudflare Workers, not Cloudflare Pages.
+
+Recommended Workers Builds settings:
+
+- Build command: `pnpm run build:cloudflare`
+- Deploy command: `pnpm run deploy:cloudflare`
+
+For local deploys, use:
+
+```bash
+pnpm run deploy
+```
+
+Do not use `wrangler pages deploy` or `pages_build_output_dir`-based deployment for this app.
+
 ## Getting Started
 
 First, run the development server:
