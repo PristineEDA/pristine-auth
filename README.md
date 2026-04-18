@@ -4,6 +4,8 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 This app uses `@opennextjs/cloudflare` 1.x and should be deployed to Cloudflare Workers, not Cloudflare Pages.
 
+Because OpenNext 1.19.x does not support the Node.js `proxy.ts` runtime yet, request interception for auth must stay in `src/middleware.ts` for now.
+
 Recommended Workers Builds settings:
 
 - Build command: `pnpm run build:cloudflare`
