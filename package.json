@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.103.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "geist": "^1.7.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^1.8.0",
     "next": "16.2.4",
@@ -48,5 +49,15 @@
     "typescript": "^5",
     "vitest": "^4.1.4",
     "wrangler": "^4.83.0"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ],
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd"
+    ]
   }
 }
