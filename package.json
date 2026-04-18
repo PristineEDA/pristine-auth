@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "deploy": "opennextjs-cloudflare build && wrangler pages deploy",
+    "deploy": "opennextjs-cloudflare build && cp .open-next/worker.js .open-next/assets/_worker.js && wrangler pages deploy",
     "preview": "opennextjs-cloudflare build && wrangler dev"
   },
   "dependencies": {
