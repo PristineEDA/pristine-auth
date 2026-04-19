@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 
 import { createEmptyConfigSnapshot } from "@/lib/auth/config"
 import { redeemDesktopExchangeCode } from "@/lib/auth/desktop"
-import { findProfileByUserId } from "@/lib/auth/profile"
+import { ensureUserProfile, findProfileByUserId } from "@/lib/auth/profile"
 import { desktopExchangeSchema } from "@/lib/auth/schemas"
 import { createAdminClient } from "@/lib/supabase/admin"
 
@@ -28,8 +28,19 @@ export async function POST(request: Request) {
     )
   }
 
-  const profile = await findProfileByUserId(exchange.payload.userId)
   const admin = createAdminClient()
+  let profile = await findProfileByUserId(exchange.payload.userId)
+
+  if (!profile?.avatarPath) {
+    const { data: userResult, error: userError } = await admin.auth.admin.getUserById(
+      exchange.payload.userId,
+    )
+
+    if (!userError && userResult.user) {
+      profile = await ensureUserProfile(userResult.user)
+    }
+  }
+
   const { data: snapshotRow } = await admin
     .from("user_config_snapshots")
     .select("settings, sync_version, synced_at")

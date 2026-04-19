@@ -3,12 +3,15 @@ import type { User } from "@supabase/supabase-js"
 import { createAdminClient } from "@/lib/supabase/admin"
 
 import { buildAvatarUrl, uploadAvatarFile } from "./avatar"
+import { AVATAR_BUCKET } from "./constants"
 import { createFallbackUsername, sanitizeUsernameCandidate } from "./utils"
 
 import type { Database } from "@/lib/supabase/database.types"
 import type { PublicProfile } from "./types"
 
 type ProfileRow = Database["public"]["Tables"]["user_profiles"]["Row"]
+
+const avatarFileExtensions = ["jpg", "png", "webp"] as const
 
 function mapProfileRow(profileRow: ProfileRow): PublicProfile {
   return {
@@ -30,7 +33,36 @@ function resolveProfileIdentity(user: User) {
 
   return {
     avatarPath: avatarPathFromMetadata,
-    username: usernameFromMetadata ?? createFallbackUsername(user.id),
+    username: usernameFromMetadata,
+  }
+}
+
+async function findStoredAvatarPath(userId: string) {
+  const admin = createAdminClient()
+
+  try {
+    const candidatePaths = avatarFileExtensions.map(
+      (extension) => `${userId}/profile.${extension}`,
+    )
+    const candidateResults = await Promise.all(
+      candidatePaths.map(async (candidatePath) => {
+        const { data, error } = await admin.storage
+          .from(AVATAR_BUCKET)
+          .exists(candidatePath)
+
+        if (error) {
+          throw error
+        }
+
+        return data ? candidatePath : null
+      }),
+    )
+
+    return candidateResults.find(
+      (candidatePath): candidatePath is string => candidatePath !== null,
+    ) ?? null
+  } catch {
+    return null
   }
 }
 
@@ -115,22 +147,33 @@ export async function createOrUpdateProfile(input: {
 }
 
 export async function ensureUserProfile(user: User) {
+  const existingProfile = await findProfileByUserId(user.id)
   const identity = resolveProfileIdentity(user)
+  let avatarPath = identity.avatarPath ?? existingProfile?.avatarPath ?? null
+
+  if (!avatarPath) {
+    avatarPath = await findStoredAvatarPath(user.id)
+  }
+
+  const username = identity.username
+    ?? existingProfile?.username
+    ?? createFallbackUsername(user.id)
+  const email = user.email ?? existingProfile?.email ?? ""
 
   try {
     return await upsertUserProfile({
-      avatarPath: identity.avatarPath,
-      email: user.email ?? "",
+      avatarPath,
+      email,
       userId: user.id,
-      username: identity.username,
+      username,
     })
   } catch {
     return {
-      avatarPath: identity.avatarPath,
-      avatarUrl: buildAvatarUrl(identity.avatarPath),
-      email: user.email ?? "",
+      avatarPath,
+      avatarUrl: buildAvatarUrl(avatarPath),
+      email,
       userId: user.id,
-      username: identity.username,
+      username,
     }
   }
 }

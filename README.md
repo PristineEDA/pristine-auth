@@ -178,9 +178,15 @@ pnpm deploy
 
 `pnpm build:cf` is sensitive to the local environment on Windows.
 
-In this workspace, a user-level Yarn Plug'n'Play manifest at `C:\Users\maksy\.pnp.cjs` interferes with the OpenNext bundling step. The repo code, tests, `pnpm build`, and TypeScript checks are green, but the Cloudflare build is most reliable when run from:
-- WSL with Node.js and pnpm installed
-- CI on Linux
-- a Windows shell that is not affected by the user-level PnP manifest
+In this workspace, a user-level Yarn Plug'n'Play manifest at `C:\Users\maksy\.pnp.cjs` interferes with the OpenNext bundling step.
 
-If you hit OpenNext resolution errors on Windows, run the deploy flow from WSL or CI first.
+`pnpm build:cf` and `pnpm deploy` now run through a repo-local Windows guard script that:
+- finds ancestor `.pnp.cjs` and `.pnp.loader.mjs` files above the repo
+- temporarily renames them out of the way while OpenNext runs
+- restores them after the command finishes, even on failure
+
+This keeps the deploy path inside the same repository and avoids the old external temp-copy workaround.
+
+If a previous run was interrupted, rerun the same command first. The guard restores any stale `*.pristine-auth-opennext-backup` files before starting a new build.
+
+WSL or Linux CI are still valid fallbacks if OpenNext hits a separate Windows-specific runtime issue, but they are no longer required just to avoid the user-level PnP manifest.
